@@ -1,0 +1,211 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>等級經驗值計算器</title>
+  <style>
+    body {
+      font-family: "Microsoft JhengHei", sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 720px;
+      margin: 20px;
+    }
+    h1 {
+      font-size: 22px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    nav {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #ddd;
+    }
+    nav button {
+      flex: 1;
+      padding: 10px;
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+    }
+    nav button.active {
+      border-bottom: 3px solid #4CAF50;
+      font-weight: bold;
+      color: #4CAF50;
+    }
+    .tab {
+      display: none;
+    }
+    .tab.active {
+      display: block;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button.calcBtn {
+      width: 100%;
+      padding: 12px;
+      background: #4CAF50;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      margin-bottom: 15px;
+    }
+    button.calcBtn:hover {
+      background: #45a049;
+    }
+    .result {
+      margin-top: 10px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 6px 4px;
+      text-align: center;
+    }
+    table th {
+      background: #eee;
+      font-weight: bold;
+    }
+    .table-container {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>等級經驗值計算器</h1>
+    <nav>
+      <button class="tabBtn active" onclick="switchTab('calculator')">計算器</button>
+      <button class="tabBtn" onclick="switchTab('table')">等級對照表</button>
+    </nav>
+
+    <!-- Calculator Tab -->
+    <div id="calculator" class="tab active">
+      <label for="level">輸入目標等級 (1 - 100)</label>
+      <input type="number" id="level" min="1" max="100" placeholder="例如：20">
+      <button class="calcBtn" onclick="calculate()">計算</button>
+      <div class="result" id="result">請輸入等級並按下計算</div>
+    </div>
+
+    <!-- Table Tab -->
+    <div id="table" class="tab">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>等級</th>
+              <th>升級所需 XP</th>
+              <th>累積總 XP</th>
+              <th>預估時間</th>
+            </tr>
+          </thead>
+          <tbody id="levelTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 升級所需經驗公式
+    function xpRequired(n) {
+      if (n === 1) return 100; // 0→1 特殊處理
+      return 100 + (((n - 2) * 10 + (55 * 2)) * ((n - 1) / 2));
+    }
+
+    // 計算單一等級
+    function calculate() {
+      const level = parseInt(document.getElementById("level").value);
+      const resultDiv = document.getElementById("result");
+
+      if (isNaN(level) || level < 1 || level > 100) {
+        resultDiv.textContent = "⚠️ 請輸入 1 到 100 之間的等級";
+        return;
+      }
+
+      let totalXP = 0;
+      for (let i = 1; i <= level; i++) {
+        totalXP += xpRequired(i);
+      }
+      const minutes = Math.ceil(totalXP / 20);
+      const hours = (minutes / 60).toFixed(1);
+
+      resultDiv.innerHTML = `
+        🎯 目標等級：<b>${level} 級</b><br>
+        📈 總共需要：<b>${totalXP.toLocaleString()} XP</b><br>
+        ⏳ 預估時間：約 <b>${minutes.toLocaleString()} 分鐘</b> (${hours} 小時)
+      `;
+    }
+
+    // 生成等級對照表
+    function generateTable() {
+      const tableBody = document.getElementById("levelTable");
+      tableBody.innerHTML = "";
+      let cumulativeXP = 0;
+      for (let level = 1; level <= 100; level++) {
+        const needXP = xpRequired(level);
+        cumulativeXP += needXP;
+        const minutes = Math.ceil(cumulativeXP / 20);
+        const hours = (minutes / 60).toFixed(1);
+        const row = `
+          <tr>
+            <td>${level}</td>
+            <td>${needXP.toLocaleString()}</td>
+            <td>${cumulativeXP.toLocaleString()}</td>
+            <td>${minutes.toLocaleString()} 分鐘 (${hours} 小時)</td>
+          </tr>
+        `;
+        tableBody.innerHTML += row;
+      }
+    }
+    generateTable();
+
+    // 分頁切換
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
+      document.querySelectorAll(".tabBtn").forEach(btn => btn.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
+      event.target.classList.add("active");
+    }
+  </script>
+</body>
+</html>s
